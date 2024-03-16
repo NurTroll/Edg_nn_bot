@@ -1,5 +1,6 @@
 import csv
 from typing import TextIO
+import json
 
 MASK = {
     "24": "255.255.255.0",
@@ -20,7 +21,7 @@ def gw_define(ip, mask):
     return gw
 
 
-#функция проверки ввода маски
+# функция проверки ввода маски
 def mask_found():
     while True:
         mask1 = input("Введите маску подсети:").strip()
@@ -48,26 +49,21 @@ def uik_vlans_name(uik_vlans):
         vlans_name = vlans_name + f'vlan {vlans[el]}\n name IPOE{vlans[el]}\n!\n'
     return vlans_name.strip()
 
+with open("data.json", "r") as read_file:
+    data = json.load(read_file)
 
-hostname = input('Введите имя коммутатора:').strip()
-ip = ip_input()
-for key in MASK:
-    print(f'/{key} - {MASK[key]}')
-mask = mask_found()
-gw = gw_define(ip, mask)
-man_vlan = input("Введите влан управления: ")
-uik_vlans = input("Введи через ; вланы уиков: ")
-print(f'{hostname} {ip} {mask} {gw}')
+gw = gw_define(data["IP"], data["MASK"])
+print(f'{data["HOSTNAME"]} {data["IP"]} {data["MASK"]} {gw}')
 config_ring = open('3750.txt', 'r', encoding='utf-8')
 conf_text = config_ring.read()
-new_text = conf_text.replace('<hostname>', hostname)
-new_text = new_text.replace('<ip>', ip)
-new_text = new_text.replace('<mask>', mask)
+new_text = conf_text.replace('<hostname>', data["HOSTNAME"])
+new_text = new_text.replace('<ip>', data["IP"])
+new_text = new_text.replace('<mask>', data["MASK"])
 new_text = new_text.replace('<gw>', gw)
-new_text = new_text.replace('<managament>', man_vlan)
-new_text = new_text.replace('<uik_vlans>', uik_vlans)
-new_text = new_text.replace('<uik_vlans_names>', uik_vlans_name(uik_vlans))
-filename = hostname + '.conf'
+new_text = new_text.replace('<managament>', data["MANAGEMENT VLAN"])
+new_text = new_text.replace('<uik_vlans>', data["UIK VLANS"])
+new_text = new_text.replace('<uik_vlans_names>', uik_vlans_name(data["UIK VLANS"]))
+filename = data["HOSTNAME"] + '.conf'
 output = open('backup/' + filename, 'w', encoding='utf-8')
 print(new_text, file=output)
 config_ring.close()
